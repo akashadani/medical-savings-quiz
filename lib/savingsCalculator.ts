@@ -41,6 +41,14 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
     }
   }
 
+  // Helper function to cap individual breakdown items realistically
+  const capBreakdownItem = (min: number, max: number): { min: number; max: number } => {
+    // Don't let any single item exceed the total max possible savings
+    const cappedMax = Math.min(max, maxPossibleSavings);
+    const cappedMin = Math.min(min, cappedMax * 0.4); // Min should be reasonable relative to max
+    return { min: Math.round(cappedMin), max: Math.round(cappedMax) };
+  };
+
   // If someone is currently pregnant (no bills yet), give minimal estimate
   if (answers.situation === 'pregnant') {
     return {
@@ -87,79 +95,94 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
   ) {
     let nicuMin = 0;
     let nicuMax = 0;
+    let durationText = '';
 
     switch (answers.nicu_duration) {
       case 'under1week':
         nicuMin = 2000;
         nicuMax = 5000;
+        durationText = 'Under 1 week';
         break;
       case '1-2weeks':
         nicuMin = 4000;
         nicuMax = 10000;
+        durationText = '1-2 week';
         break;
       case '2-4weeks':
         nicuMin = 8000;
         nicuMax = 18000;
+        durationText = '2-4 week';
         break;
       case 'over1month':
+        nicuMin = 15000;
+        nicuMax = 35000;
+        durationText = 'Extended';
+        break;
       case 'ongoing':
         nicuMin = 15000;
         nicuMax = 35000;
+        durationText = 'Ongoing';
         break;
     }
 
+    const capped = capBreakdownItem(nicuMin, nicuMax);
     breakdown.push({
       category: 'NICU Billing Errors',
-      description: `${answers.nicu_duration.replace('_', ' ')} NICU stays average 200+ charges`,
-      min: nicuMin,
-      max: nicuMax,
+      description: `${durationText} NICU stays average 200+ charges per day`,
+      min: capped.min,
+      max: capped.max,
     });
   }
 
   // C-section
   if (Array.isArray(answers.delivery) && answers.delivery.includes('csection')) {
+    const capped = capBreakdownItem(800, 3000);
     breakdown.push({
       category: 'C-Section Billing Review',
       description: 'Additional surgical procedures often have billing errors',
-      min: 800,
-      max: 3000,
+      min: capped.min,
+      max: capped.max,
     });
   }
 
   // Air ambulance
   if (answers.ambulance === 'air') {
+    const capped = capBreakdownItem(12000, 30000);
     breakdown.push({
       category: 'Air Ambulance Bill Reduction',
       description: 'Protected under federal No Surprises Act',
-      min: 12000,
-      max: 30000,
+      min: capped.min,
+      max: capped.max,
     });
   } else if (answers.ambulance === 'ground' || answers.ambulance === 'transfer') {
+    const capped = capBreakdownItem(500, 2000);
     breakdown.push({
       category: 'Ambulance Bill Reduction',
       description: 'Ambulance bills often have inflated charges',
-      min: 500,
-      max: 2000,
+      min: capped.min,
+      max: capped.max,
     });
   }
 
   // Surprise out-of-network
   if (answers.out_of_network === 'surprise') {
+    const capped = capBreakdownItem(2500, 8000);
     breakdown.push({
       category: 'Surprise Out-of-Network Bills',
       description: 'Protected under federal No Surprises Act',
-      min: 2500,
-      max: 8000,
+      min: capped.min,
+      max: capped.max,
     });
   }
 
   // Emergency situation (additional protections)
   if (answers.emergency === 'emergency') {
+    const capped = capBreakdownItem(500, 2000);
     breakdown.push({
       category: 'Emergency Billing Protections',
       description: 'Emergency situations have additional billing protections',
-      min: 500,
-      max: 2000,
+      min: capped.min,
+      max: capped.max,
     });
   }
 
@@ -197,11 +220,12 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
       charityMax = 15000;
     }
 
+    const capped = capBreakdownItem(charityMin, charityMax);
     breakdown.push({
       category: 'Financial Assistance Programs',
       description: 'You may qualify for hospital charity care',
-      min: charityMin,
-      max: charityMax,
+      min: capped.min,
+      max: capped.max,
     });
   }
 
@@ -210,11 +234,12 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
     !Array.isArray(answers.actions_taken) ||
     !answers.actions_taken.includes('itemized')
   ) {
+    const capped = capBreakdownItem(1000, 2500);
     breakdown.push({
       category: 'Billing Code Errors',
       description: "You haven't reviewed itemized bills yet",
-      min: 1000,
-      max: 2500,
+      min: capped.min,
+      max: capped.max,
     });
   }
 
@@ -223,11 +248,12 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
     !Array.isArray(answers.actions_taken) ||
     !answers.actions_taken.includes('compared_eob')
   ) {
+    const capped = capBreakdownItem(500, 1500);
     breakdown.push({
       category: 'Insurance Claim Review',
       description: 'Comparing to EOB often reveals errors',
-      min: 500,
-      max: 1500,
+      min: capped.min,
+      max: capped.max,
     });
   }
 
@@ -258,11 +284,12 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
     }
 
     if (redFlagMin > 0) {
+      const capped = capBreakdownItem(redFlagMin, redFlagMax);
       breakdown.push({
         category: 'Billing Error Corrections',
         description: 'Based on red flags you identified',
-        min: redFlagMin,
-        max: redFlagMax,
+        min: capped.min,
+        max: capped.max,
       });
     }
   }
@@ -287,20 +314,21 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
   let totalMin = breakdown.reduce((sum, item) => sum + item.min, 0);
   let totalMax = breakdown.reduce((sum, item) => sum + item.max, 0);
 
-  // Cap at what they can realistically save based on what they owe
+  // Final safety cap at what they can realistically save
   totalMax = Math.min(totalMax, maxPossibleSavings);
-  totalMin = Math.min(totalMin, maxPossibleSavings * 0.4); // Min is 40% of max cap
+  totalMin = Math.min(totalMin, totalMax); // Ensure min doesn't exceed max
 
   // If breakdown is empty or totals are too low, provide a baseline estimate
   if (breakdown.length === 0 || totalMax < 500) {
+    const capped = capBreakdownItem(400, 1200);
     breakdown.push({
       category: 'General Bill Review',
       description: 'Standard billing error review and negotiation',
-      min: 400,
-      max: 1200,
+      min: capped.min,
+      max: capped.max,
     });
-    totalMin = 400;
-    totalMax = Math.min(1200, maxPossibleSavings);
+    totalMin = capped.min;
+    totalMax = capped.max;
   }
 
   // Determine urgency

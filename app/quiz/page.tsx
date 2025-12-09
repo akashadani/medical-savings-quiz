@@ -48,7 +48,7 @@ export default function QuizPage() {
           }
         } else if (question.id === 'bill_status') {
           const optionsInfo = infoPages.find((p) => p.id === 'options_info');
-          if (optionsInfo) {
+          if (optionsInfo && (!optionsInfo.conditional || optionsInfo.conditional(answers))) {
             items.push({ type: 'info', index: infoPages.indexOf(optionsInfo) });
           }
         } else if (question.id === 'red_flags') {

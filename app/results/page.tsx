@@ -8,6 +8,7 @@ import { calculateSavings, SavingsEstimate } from '@/lib/savingsCalculator';
 export default function ResultsPage() {
   const router = useRouter();
   const [estimate, setEstimate] = useState<SavingsEstimate | null>(null);
+  const [answers, setAnswers] = useState<QuizAnswers | null>(null);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -17,8 +18,9 @@ export default function ResultsPage() {
     if (typeof window !== 'undefined') {
       const savedAnswers = localStorage.getItem('quizAnswers');
       if (savedAnswers) {
-        const answers: QuizAnswers = JSON.parse(savedAnswers);
-        const savingsEstimate = calculateSavings(answers);
+        const parsedAnswers: QuizAnswers = JSON.parse(savedAnswers);
+        setAnswers(parsedAnswers);
+        const savingsEstimate = calculateSavings(parsedAnswers);
         setEstimate(savingsEstimate);
       } else {
         // No answers found, redirect to start
@@ -165,9 +167,19 @@ export default function ResultsPage() {
                 color: '#475569',
                 fontSize: '1rem',
                 lineHeight: '1.6',
+                marginBottom: '12px',
               }}
             >
-              Since you're currently pregnant, we can help you review bills after delivery to ensure you don't overpay. Most parents save $2,000-$15,000 on delivery and NICU bills.
+              Since you're currently pregnant, now is the perfect time to prepare. After delivery, we can review your hospital bills to ensure you don't overpay.
+            </p>
+            <p
+              style={{
+                color: '#475569',
+                fontSize: '1rem',
+                lineHeight: '1.6',
+              }}
+            >
+              <strong style={{ color: '#0891b2' }}>Most parents save $2,000-$15,000</strong> on delivery bills, and even more if NICU care is needed.
             </p>
           </div>
         ) : minimalSavings ? (
@@ -400,7 +412,7 @@ export default function ResultsPage() {
               textAlign: 'center',
             }}
           >
-            Ready to Get Your Money Back?
+            {isPregnant ? 'Get Prepared Now' : 'Ready to Get Your Money Back?'}
           </h2>
           <p
             style={{
@@ -411,8 +423,9 @@ export default function ResultsPage() {
               lineHeight: '1.5',
             }}
           >
-            Enter your email to get started. We'll review your bills for free
-            and negotiate on your behalf.
+            {isPregnant
+              ? "Enter your email and we'll send you a free checklist for reviewing your bills after delivery. When the time comes, we'll be ready to help."
+              : "Enter your email to get started. We'll review your bills for free and negotiate on your behalf."}
           </p>
 
           <form onSubmit={handleSubmit}>
@@ -445,7 +458,7 @@ export default function ResultsPage() {
             </div>
 
             <button type="submit" className="button">
-              Get My Free Bill Review →
+              {isPregnant ? 'Send Me the Checklist →' : 'Get My Free Bill Review →'}
             </button>
 
             <p
@@ -467,34 +480,92 @@ export default function ResultsPage() {
         {/* Social Proof */}
         <div style={{ marginTop: '32px' }}>
           <h3 style={{ textAlign: 'center', marginBottom: '16px' }}>
-            WHAT OTHER PARENTS SAY:
+            {estimate.breakdown.some(b => b.category.includes('NICU')) ||
+             estimate.breakdown.some(b => b.category.includes('C-Section'))
+              ? 'WHAT OTHER PARENTS SAY:'
+              : 'WHAT OTHERS SAY:'}
           </h3>
 
-          <div className="card" style={{ marginBottom: '16px' }}>
-            <div style={{ marginBottom: '12px' }}>
-              <strong style={{ color: '#0f172a' }}>Sarah M., Boston</strong>
+          {/* Show NICU testimonial if relevant */}
+          {estimate.breakdown.some(b => b.category.includes('NICU')) && (
+            <div className="card" style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <strong style={{ color: '#0f172a' }}>Sarah M., Boston</strong>
+              </div>
+              <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
+                "They found $14,000 in errors on my NICU bill. I only paid them
+                $2,800 - saved over $11,000!"
+              </p>
+              <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
+                💰 Total Saved: $14,000
+              </p>
             </div>
-            <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
-              "They found $14,000 in errors on my NICU bill. I only paid them
-              $2,800 - saved over $11,000!"
-            </p>
-            <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
-              💰 Total Saved: $14,000
-            </p>
-          </div>
+          )}
 
-          <div className="card">
-            <div style={{ marginBottom: '12px' }}>
-              <strong style={{ color: '#0f172a' }}>Mike T., Phoenix</strong>
+          {/* Show air ambulance testimonial if relevant */}
+          {estimate.breakdown.some(b => b.category.includes('Air Ambulance')) && (
+            <div className="card" style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <strong style={{ color: '#0f172a' }}>Mike T., Phoenix</strong>
+              </div>
+              <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
+                "Air ambulance bill went from $47,000 to $8,000. Best decision I
+                ever made."
+              </p>
+              <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
+                💰 Total Saved: $39,000
+              </p>
             </div>
-            <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
-              "Air ambulance bill went from $47,000 to $8,000. Best decision I
-              ever made."
-            </p>
-            <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
-              💰 Total Saved: $39,000
-            </p>
-          </div>
+          )}
+
+          {/* Show surprise billing testimonial if relevant */}
+          {estimate.breakdown.some(b => b.category.includes('Surprise')) && (
+            <div className="card" style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <strong style={{ color: '#0f172a' }}>Jennifer L., Austin</strong>
+              </div>
+              <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
+                "Got hit with $12,000 in surprise out-of-network bills. BillRelief
+                got it down to what I would have paid in-network - saved me $9,500!"
+              </p>
+              <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
+                💰 Total Saved: $9,500
+              </p>
+            </div>
+          )}
+
+          {/* Default/general testimonial - show if no specific matches or always show at least one */}
+          {(!estimate.breakdown.some(b => b.category.includes('NICU')) &&
+            !estimate.breakdown.some(b => b.category.includes('Air Ambulance')) &&
+            !estimate.breakdown.some(b => b.category.includes('Surprise'))) && (
+            <>
+              <div className="card" style={{ marginBottom: '16px' }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#0f172a' }}>David R., Seattle</strong>
+                </div>
+                <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
+                  "Found over $5,000 in billing errors and duplicate charges I never
+                  would have caught on my own. Worth every penny."
+                </p>
+                <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
+                  💰 Total Saved: $5,200
+                </p>
+              </div>
+
+              <div className="card">
+                <div style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#0f172a' }}>Maria G., Chicago</strong>
+                </div>
+                <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
+                  "Hospital said I qualified for charity care but never told me.
+                  BillRelief applied for me and eliminated 70% of my bill."
+                </p>
+                <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
+                  💰 Total Saved: $8,400
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Trust Badges */}
