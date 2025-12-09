@@ -2,17 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { trackPageView, trackQuizComplete } from '@/lib/mixpanel';
 
 export default function CalculatingPage() {
   const router = useRouter();
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    trackPageView('Calculating');
+
     // Check if quiz answers exist
     const savedAnswers = localStorage.getItem('quizAnswers');
     if (!savedAnswers) {
       router.push('/');
       return;
+    }
+
+    // Track quiz completion
+    try {
+      const answers = JSON.parse(savedAnswers);
+      const questionCount = Object.keys(answers).length;
+      trackQuizComplete(questionCount, answers);
+    } catch (error) {
+      console.error('Error tracking quiz completion:', error);
     }
   }, [router]);
 

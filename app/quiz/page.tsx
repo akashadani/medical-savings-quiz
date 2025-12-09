@@ -7,12 +7,18 @@ import { quizQuestions, infoPages } from '@/lib/quizConfig';
 import ProgressBar from '@/components/ProgressBar';
 import QuestionCard from '@/components/QuestionCard';
 import InfoCard from '@/components/InfoCard';
+import { trackPageView, trackQuizAnswer } from '@/lib/mixpanel';
 
 export default function QuizPage() {
   const router = useRouter();
-  const { answers, setAnswer } = useQuiz();
+  const { answers, setAnswer, submitProgress } = useQuiz();
   const [currentStep, setCurrentStep] = useState(0);
   const [flowItems, setFlowItems] = useState<Array<{ type: 'question' | 'info'; index: number }>>([]);
+
+  // Track page view on mount
+  useEffect(() => {
+    trackPageView('Quiz');
+  }, []);
 
   // Build the flow based on current answers
   useEffect(() => {
@@ -77,12 +83,19 @@ export default function QuizPage() {
     .slice(0, currentStep + 1)
     .filter((item) => item.type === 'question').length;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isLastStep) {
       // Save answers to localStorage for results page
       if (typeof window !== 'undefined') {
         localStorage.setItem('quizAnswers', JSON.stringify(answers));
       }
+
+      // Submit final progress before moving to results
+      if (currentItem && currentItem.type === 'question') {
+        const question = quizQuestions[currentItem.index];
+        await submitProgress(question.id, false);
+      }
+
       router.push('/calculating');
     } else {
       setCurrentStep((prev) => prev + 1);
@@ -97,8 +110,14 @@ export default function QuizPage() {
     }
   };
 
-  const handleSelect = (questionId: string, value: string | string[], isMultiSelect: boolean) => {
+  const handleSelect = async (questionId: string, value: string | string[], isMultiSelect: boolean) => {
     setAnswer(questionId, value);
+
+    // Track answer selection in Mixpanel
+    trackQuizAnswer(questionId, value, {
+      question_number: currentStep + 1,
+      is_multi_select: isMultiSelect,
+    });
 
     // Auto-advance for single select questions
     if (!isMultiSelect) {

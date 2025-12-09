@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { QuizAnswers } from '@/lib/quizConfig';
 import { calculateSavings, SavingsEstimate } from '@/lib/savingsCalculator';
+import { getSessionId } from '@/lib/sessionManager';
+import { trackPageView, trackEmailSubmission, identifyUser } from '@/lib/mixpanel';
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -13,8 +15,16 @@ export default function ResultsPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
+    trackPageView('Results', {
+      savings_min: estimate?.totalMin,
+      savings_max: estimate?.totalMax,
+      urgency_level: estimate?.urgencyLevel,
+    });
+
     if (typeof window !== 'undefined') {
       const savedAnswers = localStorage.getItem('quizAnswers');
       if (savedAnswers) {
@@ -31,15 +41,73 @@ export default function ResultsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError('');
 
-    // Here you would integrate with your email service or Google Sheets
-    // For now, we'll just simulate success
-    console.log('Form submitted:', { email, name, phone, estimate });
+    const GOOGLE_SCRIPT_URL = process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL ||
+      'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
 
-    setSubmitted(true);
+    try {
+      const sessionId = getSessionId();
 
-    // Optional: Send to Google Sheets (similar to the existing landing page)
-    // You can use the same Google Apps Script endpoint
+      if (!sessionId) {
+        console.error('No session ID found');
+        setSubmitError('Session error. Please try completing the quiz again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          current_question: 'results_submitted',
+          completed: true, // Mark as completed
+          email: email,
+          name: name,
+          phone: phone,
+          savings_min: estimate?.totalMin || 0,
+          savings_max: estimate?.totalMax || 0,
+          urgency_level: estimate?.urgencyLevel || 'normal',
+          full_answers_json: JSON.stringify(answers),
+          savings_breakdown_json: JSON.stringify(estimate?.breakdown || []),
+          ...answers, // Include all quiz answers
+        }),
+        mode: 'no-cors', // Required for Google Apps Script
+      });
+
+      // Note: With no-cors mode, we can't read the response
+      // We assume success if no error is thrown
+      console.log('Form submitted successfully:', { email, name, phone, estimate });
+
+      // Track email submission in Mixpanel
+      identifyUser(email, {
+        name: name,
+        phone: phone,
+        savings_min: estimate?.totalMin || 0,
+        savings_max: estimate?.totalMax || 0,
+        urgency_level: estimate?.urgencyLevel || 'normal',
+      });
+
+      trackEmailSubmission({
+        email: email,
+        name: name,
+        phone: phone,
+        savings_min: estimate?.totalMin || 0,
+        savings_max: estimate?.totalMax || 0,
+        urgency_level: estimate?.urgencyLevel || 'normal',
+      });
+
+      setSubmitted(true);
+
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setSubmitError('There was an error submitting the form. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   if (!estimate) {
@@ -439,6 +507,23 @@ export default function ResultsPage() {
           </p>
 
           <form onSubmit={handleSubmit}>
+            {submitError && (
+              <div
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid #ef4444',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  marginBottom: '16px',
+                  color: '#dc2626',
+                  fontSize: '0.9rem',
+                  textAlign: 'center',
+                }}
+              >
+                {submitError}
+              </div>
+            )}
+
             <div style={{ marginBottom: '12px' }}>
               <input
                 type="email"
@@ -446,6 +531,7 @@ export default function ResultsPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -455,6 +541,7 @@ export default function ResultsPage() {
                 placeholder="Full name (optional)"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={isSubmitting}
               />
             </div>
 
@@ -464,11 +551,16 @@ export default function ResultsPage() {
                 placeholder="Phone number (optional)"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                disabled={isSubmitting}
               />
             </div>
 
-            <button type="submit" className="button">
-              {isPregnant ? 'Send Me the Checklist →' : 'Get My Free Bill Review →'}
+            <button type="submit" className="button" disabled={isSubmitting}>
+              {isSubmitting
+                ? 'Submitting...'
+                : isPregnant
+                ? 'Send Me the Checklist →'
+                : 'Get My Free Bill Review →'}
             </button>
 
             <p

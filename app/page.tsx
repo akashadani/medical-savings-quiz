@@ -1,9 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { trackPageView } from '@/lib/mixpanel';
 
 export default function Home() {
   const router = useRouter();
+
+  useEffect(() => {
+    trackPageView('Home');
+  }, []);
 
   return (
     <div className="page-wrapper">
