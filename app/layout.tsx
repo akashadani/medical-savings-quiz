@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { QuizProvider } from '@/lib/quizContext';
+import LogRocketInit from '@/components/LogRocketInit';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <LogRocketInit />
         <QuizProvider>{children}</QuizProvider>
       </body>
     </html>

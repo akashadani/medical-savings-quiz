@@ -26,7 +26,12 @@ export default function QuizPage() {
         questionCount++;
 
         // Check for info pages after this question
-        if (question.id === 'nicu_duration') {
+        if (question.id === 'reviewed_coverage') {
+          const pregnantInfo = infoPages.find((p) => p.id === 'pregnant_preparation');
+          if (pregnantInfo && (!pregnantInfo.conditional || pregnantInfo.conditional(answers))) {
+            items.push({ type: 'info', index: infoPages.indexOf(pregnantInfo) });
+          }
+        } else if (question.id === 'nicu_duration') {
           const nicuInfo = infoPages.find((p) => p.id === 'nicu_info');
           if (nicuInfo && (!nicuInfo.conditional || nicuInfo.conditional(answers))) {
             items.push({ type: 'info', index: infoPages.indexOf(nicuInfo) });

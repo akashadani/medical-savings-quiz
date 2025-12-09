@@ -41,25 +41,129 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
     }
   }
 
-  // Helper function to cap individual breakdown items realistically
-  const capBreakdownItem = (min: number, max: number): { min: number; max: number } => {
-    // Don't let any single item exceed the total max possible savings
-    const cappedMax = Math.min(max, maxPossibleSavings);
-    const cappedMin = Math.min(min, cappedMax * 0.4); // Min should be reasonable relative to max
-    return { min: Math.round(cappedMin), max: Math.round(cappedMax) };
+  // Helper function to proportionally scale all breakdown items to fit within max
+  const scaleBreakdownToMax = (
+    items: SavingsBreakdown[],
+    maxAllowed: number
+  ): SavingsBreakdown[] => {
+    const currentMax = items.reduce((sum, item) => sum + item.max, 0);
+    const currentMin = items.reduce((sum, item) => sum + item.min, 0);
+
+    // If we're already under the max, no scaling needed
+    if (currentMax <= maxAllowed) {
+      return items;
+    }
+
+    // Scale down proportionally
+    const scaleFactor = maxAllowed / currentMax;
+
+    return items.map(item => ({
+      ...item,
+      min: Math.round(item.min * scaleFactor),
+      max: Math.round(item.max * scaleFactor),
+    }));
   };
 
-  // If someone is currently pregnant (no bills yet), give minimal estimate
+  // If someone is currently pregnant (no bills yet), calculate potential savings
   if (answers.situation === 'pregnant') {
+    const pregnantBreakdown: SavingsBreakdown[] = [];
+
+    // Base delivery savings potential
+    let baseMin = 1500;
+    let baseMax = 4000;
+
+    // C-section adds significant potential
+    if (answers.expected_delivery === 'planned_csection') {
+      baseMin = 2500;
+      baseMax = 6000;
+    }
+
+    // High-risk pregnancy
+    if (answers.expected_delivery === 'high_risk') {
+      baseMin = 3000;
+      baseMax = 8000;
+    }
+
+    // Multiples increase base
+    if (answers.multiples === 'twins') {
+      baseMin = Math.round(baseMin * 1.5);
+      baseMax = Math.round(baseMax * 1.8);
+    } else if (answers.multiples === 'multiples') {
+      baseMin = Math.round(baseMin * 2);
+      baseMax = Math.round(baseMax * 2.5);
+    }
+
+    // ALWAYS add base delivery estimate first
+    let deliveryDescription = 'Standard delivery';
+    if (answers.expected_delivery === 'planned_csection') {
+      deliveryDescription = 'Planned C-section';
+    } else if (answers.expected_delivery === 'high_risk') {
+      deliveryDescription = 'High-risk pregnancy care';
+    }
+    if (answers.multiples === 'twins') {
+      deliveryDescription += ' (twins)';
+    } else if (answers.multiples === 'multiples') {
+      deliveryDescription += ' (multiples)';
+    }
+
+    pregnantBreakdown.push({
+      category: 'Delivery Bill Review',
+      description: `${deliveryDescription} - hospitals average 50+ billable items`,
+      min: baseMin,
+      max: baseMax,
+    });
+
+    // Complications
+    if (Array.isArray(answers.pregnancy_complications) &&
+        !answers.pregnancy_complications.includes('none')) {
+      const complications = answers.pregnancy_complications.filter(c => c !== 'none');
+      if (complications.length > 0) {
+        pregnantBreakdown.push({
+          category: 'Complication Management',
+          description: 'Additional monitoring and treatment creates billing complexity',
+          min: 800,
+          max: 3000,
+        });
+      }
+    }
+
+    // Out-of-network risk
+    if (answers.hospital_network === 'no' || answers.hospital_network === 'not_sure') {
+      pregnantBreakdown.push({
+        category: 'Network Status Verification',
+        description: 'Ensuring no surprise out-of-network bills after delivery',
+        min: 500,
+        max: 2000,
+      });
+    }
+
+    // High deductible means more at stake
+    if (answers.insurance_deductible === 'high') {
+      pregnantBreakdown.push({
+        category: 'High Deductible Review',
+        description: 'With a high deductible, maximizing savings is critical',
+        min: 1000,
+        max: 3000,
+      });
+    }
+
+    // Haven't reviewed coverage
+    if (answers.reviewed_coverage === 'no' || answers.reviewed_coverage === 'confused') {
+      pregnantBreakdown.push({
+        category: 'Coverage Gap Identification',
+        description: 'Understanding your coverage can prevent surprise bills',
+        min: 500,
+        max: 1500,
+      });
+    }
+
+    const totalMinPregnant = pregnantBreakdown.reduce((sum, item) => sum + item.min, 0);
+    const totalMaxPregnant = pregnantBreakdown.reduce((sum, item) => sum + item.max, 0);
+
     return {
-      totalMin: 0,
-      totalMax: 0,
-      breakdown: [{
-        category: 'Future Savings Opportunity',
-        description: 'We can help review your bills after delivery',
-        min: 0,
-        max: 0,
-      }],
+      totalMin: Math.round(totalMinPregnant),
+      totalMax: Math.round(totalMaxPregnant),
+      breakdown: pregnantBreakdown,
       urgencyLevel: 'normal',
       urgencyMessage: undefined,
     };
@@ -125,64 +229,68 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
         break;
     }
 
-    const capped = capBreakdownItem(nicuMin, nicuMax);
     breakdown.push({
       category: 'NICU Billing Errors',
       description: `${durationText} NICU stays average 200+ charges per day`,
-      min: capped.min,
-      max: capped.max,
+      min: nicuMin,
+      max: nicuMax,
     });
   }
 
-  // C-section
-  if (Array.isArray(answers.delivery) && answers.delivery.includes('csection')) {
-    const capped = capBreakdownItem(800, 3000);
-    breakdown.push({
-      category: 'C-Section Billing Review',
-      description: 'Additional surgical procedures often have billing errors',
-      min: capped.min,
-      max: capped.max,
-    });
+  // Delivery baseline for "baby" situation
+  if (answers.situation === 'baby') {
+    if (Array.isArray(answers.delivery) && answers.delivery.includes('csection')) {
+      breakdown.push({
+        category: 'C-Section Billing Review',
+        description: 'Surgical deliveries have more complex billing',
+        min: 1500,
+        max: 4500,
+      });
+    } else if (Array.isArray(answers.delivery) && answers.delivery.includes('none')) {
+      // Standard vaginal delivery
+      breakdown.push({
+        category: 'Standard Delivery Bill Review',
+        description: 'Even uncomplicated deliveries average 50+ separate charges',
+        min: 1000,
+        max: 3000,
+      });
+    }
   }
 
   // Air ambulance
   if (answers.ambulance === 'air') {
-    const capped = capBreakdownItem(12000, 30000);
     breakdown.push({
       category: 'Air Ambulance Bill Reduction',
       description: 'Protected under federal No Surprises Act',
-      min: capped.min,
-      max: capped.max,
+      min: 12000,
+      max: 30000,
     });
   } else if (answers.ambulance === 'ground' || answers.ambulance === 'transfer') {
-    const capped = capBreakdownItem(500, 2000);
     breakdown.push({
       category: 'Ambulance Bill Reduction',
       description: 'Ambulance bills often have inflated charges',
-      min: capped.min,
-      max: capped.max,
+      min: 500,
+      max: 2000,
     });
   }
 
   // Surprise out-of-network
   if (answers.out_of_network === 'surprise') {
-    const capped = capBreakdownItem(2500, 8000);
     breakdown.push({
       category: 'Surprise Out-of-Network Bills',
       description: 'Protected under federal No Surprises Act',
-      min: capped.min,
-      max: capped.max,
+      min: 2500,
+      max: 8000,
     });
   }
 
   // Emergency situation (additional protections)
   if (answers.emergency === 'emergency') {
-    const capped = capBreakdownItem(500, 2000);
     breakdown.push({
       category: 'Emergency Billing Protections',
       description: 'Emergency situations have additional billing protections',
-      min: capped.min,
-      max: capped.max,
+      min: 500,
+      max: 2000,
     });
   }
 
@@ -220,12 +328,11 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
       charityMax = 15000;
     }
 
-    const capped = capBreakdownItem(charityMin, charityMax);
     breakdown.push({
       category: 'Financial Assistance Programs',
       description: 'You may qualify for hospital charity care',
-      min: capped.min,
-      max: capped.max,
+      min: charityMin,
+      max: charityMax,
     });
   }
 
@@ -234,12 +341,11 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
     !Array.isArray(answers.actions_taken) ||
     !answers.actions_taken.includes('itemized')
   ) {
-    const capped = capBreakdownItem(1000, 2500);
     breakdown.push({
       category: 'Billing Code Errors',
       description: "You haven't reviewed itemized bills yet",
-      min: capped.min,
-      max: capped.max,
+      min: 1000,
+      max: 2500,
     });
   }
 
@@ -248,12 +354,11 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
     !Array.isArray(answers.actions_taken) ||
     !answers.actions_taken.includes('compared_eob')
   ) {
-    const capped = capBreakdownItem(500, 1500);
     breakdown.push({
       category: 'Insurance Claim Review',
       description: 'Comparing to EOB often reveals errors',
-      min: capped.min,
-      max: capped.max,
+      min: 500,
+      max: 1500,
     });
   }
 
@@ -284,12 +389,11 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
     }
 
     if (redFlagMin > 0) {
-      const capped = capBreakdownItem(redFlagMin, redFlagMax);
       breakdown.push({
         category: 'Billing Error Corrections',
         description: 'Based on red flags you identified',
-        min: capped.min,
-        max: capped.max,
+        min: redFlagMin,
+        max: redFlagMax,
       });
     }
   }
@@ -310,26 +414,22 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
     item.max = Math.round(item.max * actionMultiplier * collectionsMultiplier);
   });
 
-  // Calculate totals
-  let totalMin = breakdown.reduce((sum, item) => sum + item.min, 0);
-  let totalMax = breakdown.reduce((sum, item) => sum + item.max, 0);
-
-  // Final safety cap at what they can realistically save
-  totalMax = Math.min(totalMax, maxPossibleSavings);
-  totalMin = Math.min(totalMin, totalMax); // Ensure min doesn't exceed max
-
   // If breakdown is empty or totals are too low, provide a baseline estimate
-  if (breakdown.length === 0 || totalMax < 500) {
-    const capped = capBreakdownItem(400, 1200);
+  if (breakdown.length === 0) {
     breakdown.push({
       category: 'General Bill Review',
       description: 'Standard billing error review and negotiation',
-      min: capped.min,
-      max: capped.max,
+      min: Math.round(400 * actionMultiplier * collectionsMultiplier),
+      max: Math.round(1200 * actionMultiplier * collectionsMultiplier),
     });
-    totalMin = capped.min;
-    totalMax = capped.max;
   }
+
+  // Scale down all items proportionally if they exceed maxPossibleSavings
+  const scaledBreakdown = scaleBreakdownToMax(breakdown, maxPossibleSavings);
+
+  // Calculate final totals (these should now add up correctly)
+  const totalMin = scaledBreakdown.reduce((sum, item) => sum + item.min, 0);
+  const totalMax = scaledBreakdown.reduce((sum, item) => sum + item.max, 0);
 
   // Determine urgency
   let urgencyLevel: 'normal' | 'high' | 'critical' = 'normal';
@@ -349,7 +449,7 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
   return {
     totalMin: Math.round(totalMin),
     totalMax: Math.round(totalMax),
-    breakdown,
+    breakdown: scaledBreakdown,
     urgencyLevel,
     urgencyMessage,
   };

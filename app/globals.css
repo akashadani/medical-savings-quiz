@@ -191,14 +191,6 @@ button:disabled {
   position: relative;
 }
 
-.info-box-list li::before {
-  content: "✓";
-  color: #0891b2;
-  font-weight: 700;
-  position: absolute;
-  left: 0;
-}
-
 /* Answer options */
 .answer-options {
   display: flex;

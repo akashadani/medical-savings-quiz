@@ -39,6 +39,78 @@ export const quizQuestions: QuizQuestion[] = [
     ],
   },
   {
+    id: 'expected_delivery',
+    question: 'What type of delivery are you expecting?',
+    options: [
+      { value: 'vaginal', label: 'Vaginal delivery (standard)' },
+      { value: 'planned_csection', label: 'Planned C-section' },
+      { value: 'high_risk', label: 'High-risk pregnancy' },
+      { value: 'not_sure', label: 'Not sure yet / too early to tell' },
+    ],
+    conditional: (answers) => answers.situation === 'pregnant',
+  },
+  {
+    id: 'multiples',
+    question: 'Are you expecting twins or multiples?',
+    options: [
+      { value: 'no', label: 'No, single baby' },
+      { value: 'twins', label: 'Yes, twins' },
+      { value: 'multiples', label: 'Yes, triplets or more' },
+    ],
+    conditional: (answers) => answers.situation === 'pregnant',
+  },
+  {
+    id: 'pregnancy_complications',
+    question: 'Has your doctor mentioned any potential complications or risks?',
+    multiSelect: true,
+    options: [
+      { value: 'none', label: 'No, everything is normal so far' },
+      { value: 'gestational_diabetes', label: 'Gestational diabetes' },
+      { value: 'preeclampsia', label: 'Preeclampsia or high blood pressure' },
+      { value: 'preterm_risk', label: 'Risk of preterm delivery' },
+      { value: 'other', label: 'Other complications' },
+    ],
+    whyItMatters:
+      'Complications often mean higher bills and more opportunities for billing errors',
+    conditional: (answers) => answers.situation === 'pregnant',
+  },
+  {
+    id: 'hospital_network',
+    question: 'Is your planned hospital in-network with your insurance?',
+    options: [
+      { value: 'yes', label: 'Yes, confirmed in-network' },
+      { value: 'no', label: 'No, out-of-network' },
+      { value: 'not_sure', label: 'Not sure / haven\'t checked' },
+    ],
+    whyItMatters:
+      'Out-of-network hospitals can result in surprise bills, but federal law may protect you',
+    conditional: (answers) => answers.situation === 'pregnant',
+  },
+  {
+    id: 'insurance_deductible',
+    question: 'What\'s your insurance deductible and out-of-pocket max?',
+    options: [
+      { value: 'low', label: 'Low deductible (under $1,500)' },
+      { value: 'medium', label: 'Medium deductible ($1,500-$5,000)' },
+      { value: 'high', label: 'High deductible ($5,000+)' },
+      { value: 'not_sure', label: 'Not sure' },
+    ],
+    whyItMatters:
+      'Higher deductibles mean you\'ll pay more out-of-pocket, making savings more valuable',
+    conditional: (answers) => answers.situation === 'pregnant',
+  },
+  {
+    id: 'reviewed_coverage',
+    question: 'Have you reviewed your insurance maternity coverage?',
+    options: [
+      { value: 'yes_detailed', label: 'Yes, I know what\'s covered in detail' },
+      { value: 'yes_basic', label: 'Yes, I have a basic understanding' },
+      { value: 'no', label: 'No, not yet' },
+      { value: 'confused', label: 'I tried but it\'s confusing' },
+    ],
+    conditional: (answers) => answers.situation === 'pregnant',
+  },
+  {
     id: 'delivery',
     question: 'Did your delivery involve any of these?',
     multiSelect: true,
@@ -66,7 +138,7 @@ export const quizQuestions: QuizQuestion[] = [
   },
   {
     id: 'hospital_services',
-    question: 'What type of care did your child receive?',
+    question: 'What type of care did you or your family member receive?',
     multiSelect: true,
     options: [
       { value: 'overnight', label: 'Overnight hospital stay' },
@@ -74,9 +146,14 @@ export const quizQuestions: QuizQuestion[] = [
       { value: 'er', label: 'Emergency room visit(s)' },
       { value: 'tests', label: 'Specialized tests (MRI, CT scan, ultrasound)' },
       { value: 'icu', label: 'ICU or intensive care' },
+      { value: 'none', label: 'None of the above' },
     ],
     conditional: (answers) =>
-      answers.situation === 'hospital' || answers.situation === 'er',
+      answers.situation === 'baby' ||
+      answers.situation === 'hospital' ||
+      answers.situation === 'er' ||
+      answers.situation === 'chronic' ||
+      answers.situation === 'mix',
   },
   {
     id: 'emergency',
@@ -88,6 +165,7 @@ export const quizQuestions: QuizQuestion[] = [
     ],
     whyItMatters:
       'Emergencies often mean less choice in providers and more billing protections',
+    conditional: (answers) => answers.situation !== 'pregnant',
   },
   {
     id: 'ambulance',
@@ -100,6 +178,7 @@ export const quizQuestions: QuizQuestion[] = [
     ],
     whyItMatters:
       'Air ambulance bills average $30k-$50k and often have huge savings opportunities',
+    conditional: (answers) => answers.situation !== 'pregnant',
   },
   {
     id: 'out_of_network',
@@ -115,6 +194,7 @@ export const quizQuestions: QuizQuestion[] = [
     ],
     whyItMatters:
       'Surprise out-of-network bills may be illegal under federal law',
+    conditional: (answers) => answers.situation !== 'pregnant',
   },
   {
     id: 'total_billed',
@@ -127,6 +207,7 @@ export const quizQuestions: QuizQuestion[] = [
       { value: 'over100k', label: 'Over $100,000' },
       { value: 'not_sure', label: 'Not sure yet' },
     ],
+    conditional: (answers) => answers.situation !== 'pregnant',
   },
   {
     id: 'your_responsibility',
@@ -138,6 +219,7 @@ export const quizQuestions: QuizQuestion[] = [
       { value: 'over15k', label: 'Over $15,000' },
       { value: 'not_sure', label: 'Not sure yet (still getting bills)' },
     ],
+    conditional: (answers) => answers.situation !== 'pregnant',
   },
   {
     id: 'bill_status',
@@ -151,6 +233,7 @@ export const quizQuestions: QuizQuestion[] = [
     ],
     whyItMatters:
       'Past due bills need immediate action to protect your credit',
+    conditional: (answers) => answers.situation !== 'pregnant',
   },
   {
     id: 'financial_hardship',
@@ -169,6 +252,7 @@ export const quizQuestions: QuizQuestion[] = [
     ],
     whyItMatters:
       'You may qualify for financial assistance or charity care programs that could reduce/eliminate bills',
+    conditional: (answers) => answers.situation !== 'pregnant',
   },
   {
     id: 'actions_taken',
@@ -183,6 +267,7 @@ export const quizQuestions: QuizQuestion[] = [
       { value: 'charity', label: 'Applied for charity care' },
       { value: 'none', label: 'None of the above' },
     ],
+    conditional: (answers) => answers.situation !== 'pregnant',
   },
   {
     id: 'red_flags',
@@ -203,10 +288,23 @@ export const quizQuestions: QuizQuestion[] = [
       },
       { value: 'not_looked', label: "Haven't looked closely at the bills" },
     ],
+    conditional: (answers) => answers.situation !== 'pregnant',
   },
 ];
 
 export const infoPages: InfoPage[] = [
+  {
+    id: 'pregnant_preparation',
+    headline: 'Get Ready Now, Save Money Later',
+    stats: [
+      'Average hospital delivery bill: $10,000-$30,000 (before insurance)',
+      '80% of delivery bills contain billing errors or overcharges',
+      'Parents who review bills carefully save an average of $2,000-$8,000',
+      'We\'ll help you review everything after your baby arrives',
+    ],
+    cta: 'Continue',
+    conditional: (answers) => answers.situation === 'pregnant',
+  },
   {
     id: 'nicu_info',
     headline: 'NICU Bills Are Especially Complex',

@@ -54,7 +54,7 @@ export default function ResultsPage() {
   const formattedMax = estimate.totalMax.toLocaleString();
 
   // Handle edge case: currently pregnant (no bills yet)
-  const isPregnant = estimate.totalMin === 0 && estimate.totalMax === 0;
+  const isPregnant = answers?.situation === 'pregnant';
 
   // Handle edge case: already done everything (minimal savings)
   const minimalSavings = estimate.totalMax < 1000;
@@ -151,37 +151,40 @@ export default function ResultsPage() {
 
         {/* Main Estimate */}
         {isPregnant ? (
-          <div className="stat-highlight" style={{ marginTop: '24px' }}>
+          <>
+            <div className="stat-highlight" style={{ marginTop: '24px' }}>
+              <p
+                style={{
+                  color: '#475569',
+                  fontSize: '0.9rem',
+                  marginBottom: '12px',
+                }}
+              >
+                Estimated Potential Savings After Delivery
+              </p>
+              <div
+                className="stat-highlight-value"
+                style={{ fontSize: '3rem', marginBottom: '8px' }}
+              >
+                ${formattedMin} - ${formattedMax}
+              </div>
+              <div className="stat-highlight-label">
+                Based on your expected delivery and circumstances
+              </div>
+            </div>
             <p
               style={{
-                color: '#0891b2',
-                fontSize: '1.2rem',
-                fontWeight: '600',
-                marginBottom: '16px',
+                color: '#64748b',
+                fontSize: '0.8rem',
+                textAlign: 'center',
+                marginTop: '16px',
+                fontStyle: 'italic',
+                lineHeight: '1.4',
               }}
             >
-              Great Timing!
+              *This is a preliminary estimate. Actual savings will depend on your delivery details and bills. We'll review everything after your baby arrives.
             </p>
-            <p
-              style={{
-                color: '#475569',
-                fontSize: '1rem',
-                lineHeight: '1.6',
-                marginBottom: '12px',
-              }}
-            >
-              Since you're currently pregnant, now is the perfect time to prepare. After delivery, we can review your hospital bills to ensure you don't overpay.
-            </p>
-            <p
-              style={{
-                color: '#475569',
-                fontSize: '1rem',
-                lineHeight: '1.6',
-              }}
-            >
-              <strong style={{ color: '#0891b2' }}>Most parents save $2,000-$15,000</strong> on delivery bills, and even more if NICU care is needed.
-            </p>
-          </div>
+          </>
         ) : minimalSavings ? (
           <div className="stat-highlight" style={{ marginTop: '24px' }}>
             <p
@@ -197,7 +200,9 @@ export default function ResultsPage() {
               className="stat-highlight-value"
               style={{ fontSize: '3rem', marginBottom: '8px' }}
             >
-              ${formattedMin} - ${formattedMax}
+              {formattedMin === formattedMax
+                ? `Up to $${formattedMax}`
+                : `$${formattedMin} - $${formattedMax}`}
             </div>
             <div className="stat-highlight-label">
               You've done great work already! We may still find a few opportunities.
@@ -239,6 +244,11 @@ export default function ResultsPage() {
             }}
           >
             *This is an estimate based on the information you provided. Actual savings may vary and are not guaranteed. Final results depend on a detailed review of your bills.
+            {(answers?.your_responsibility === 'not_sure' || answers?.total_billed === 'not_sure') && (
+              <span style={{ display: 'block', marginTop: '8px' }}>
+                Since you're still receiving bills, your actual savings potential may be higher or lower than this estimate.
+              </span>
+            )}
           </p>
         )}
 
@@ -480,8 +490,11 @@ export default function ResultsPage() {
         {/* Social Proof */}
         <div style={{ marginTop: '32px' }}>
           <h3 style={{ textAlign: 'center', marginBottom: '16px' }}>
-            {estimate.breakdown.some(b => b.category.includes('NICU')) ||
-             estimate.breakdown.some(b => b.category.includes('C-Section'))
+            {answers?.situation === 'baby' ||
+             answers?.situation === 'pregnant' ||
+             estimate.breakdown.some(b => b.category.includes('NICU')) ||
+             estimate.breakdown.some(b => b.category.includes('C-Section')) ||
+             estimate.breakdown.some(b => b.category.includes('Delivery'))
               ? 'WHAT OTHER PARENTS SAY:'
               : 'WHAT OTHERS SAY:'}
           </h3>
@@ -534,10 +547,28 @@ export default function ResultsPage() {
             </div>
           )}
 
+          {/* Show ER/chronic care testimonial if relevant */}
+          {(answers?.situation === 'er' || answers?.situation === 'chronic' ||
+            (Array.isArray(answers?.hospital_services) && answers.hospital_services.includes('er'))) && (
+            <div className="card" style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <strong style={{ color: '#0f172a' }}>Rachel K., Denver</strong>
+              </div>
+              <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
+                "Multiple ER visits added up fast. BillRelief found $6,800 in duplicate
+                charges and services billed twice. Couldn't have done it myself."
+              </p>
+              <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
+                💰 Total Saved: $6,800
+              </p>
+            </div>
+          )}
+
           {/* Default/general testimonial - show if no specific matches or always show at least one */}
           {(!estimate.breakdown.some(b => b.category.includes('NICU')) &&
             !estimate.breakdown.some(b => b.category.includes('Air Ambulance')) &&
-            !estimate.breakdown.some(b => b.category.includes('Surprise'))) && (
+            !estimate.breakdown.some(b => b.category.includes('Surprise')) &&
+            answers?.situation !== 'er' && answers?.situation !== 'chronic') && (
             <>
               <div className="card" style={{ marginBottom: '16px' }}>
                 <div style={{ marginBottom: '12px' }}>
