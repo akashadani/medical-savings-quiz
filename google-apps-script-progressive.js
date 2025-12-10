@@ -49,6 +49,7 @@ const QUIZ_COLUMNS = [
   "email",
   "name",
   "phone",
+  "referral_source",
 
   // All quiz questions
   "situation",

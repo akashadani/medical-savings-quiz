@@ -67,27 +67,39 @@ export default function ResultsPage() {
           session_id: sessionId,
           current_question: 'results_submitted',
           completed: true, // Mark as completed
+          // Contact information (broken out for easy access)
           email: email,
           name: name,
           phone: phone,
+          referral_source: answers?.referral_source || '', // Where they heard about us
+          // Savings estimates
           savings_min: estimate?.totalMin || 0,
           savings_max: estimate?.totalMax || 0,
           urgency_level: estimate?.urgencyLevel || 'normal',
+          // Full data as JSON (for backup/analysis)
           full_answers_json: JSON.stringify(answers),
           savings_breakdown_json: JSON.stringify(estimate?.breakdown || []),
-          ...answers, // Include all quiz answers
+          // All quiz answers spread out as individual fields
+          ...answers,
         }),
         mode: 'no-cors', // Required for Google Apps Script
       });
 
       // Note: With no-cors mode, we can't read the response
       // We assume success if no error is thrown
-      console.log('Form submitted successfully:', { email, name, phone, estimate });
+      console.log('Form submitted successfully:', {
+        email,
+        name,
+        phone,
+        referral_source: answers?.referral_source,
+        estimate
+      });
 
       // Track email submission in Mixpanel
       identifyUser(email, {
         name: name,
         phone: phone,
+        referral_source: answers?.referral_source || '',
         savings_min: estimate?.totalMin || 0,
         savings_max: estimate?.totalMax || 0,
         urgency_level: estimate?.urgencyLevel || 'normal',
@@ -97,6 +109,7 @@ export default function ResultsPage() {
         email: email,
         name: name,
         phone: phone,
+        referral_source: answers?.referral_source || '',
         savings_min: estimate?.totalMin || 0,
         savings_max: estimate?.totalMax || 0,
         urgency_level: estimate?.urgencyLevel || 'normal',

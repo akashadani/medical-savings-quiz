@@ -325,6 +325,19 @@ export const quizQuestions: QuizQuestion[] = [
     ],
     conditional: (answers) => answers.situation !== 'pregnant',
   },
+  {
+    id: 'referral_source',
+    question: 'Where did you hear about us?',
+    displayType: 'compact',
+    options: [
+      { value: 'facebook_ad', label: 'Facebook Ad' },
+      { value: 'instagram_ad', label: 'Instagram Ad' },
+      { value: 'google', label: 'Google' },
+      { value: 'friend', label: 'Friend' },
+      { value: 'family', label: 'Family' },
+      { value: 'other', label: 'Other' },
+    ],
+  },
 ];
 
 export const infoPages: InfoPage[] = [

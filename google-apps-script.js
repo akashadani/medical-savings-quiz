@@ -53,6 +53,7 @@ function doPost(e) {
         "Email",
         "Name",
         "Phone",
+        "Referral Source",
         "Savings Min",
         "Savings Max",
         "Urgency Level",
@@ -86,9 +87,10 @@ function doPost(e) {
     const email = data.email;
     const name = data.name || "";
     const phone = data.phone || "";
-    const savingsMin = data.savingsMin || 0;
-    const savingsMax = data.savingsMax || 0;
-    const urgencyLevel = data.urgencyLevel || "normal";
+    const referralSource = data.referral_source || "";
+    const savingsMin = data.savings_min || data.savingsMin || 0;
+    const savingsMax = data.savings_max || data.savingsMax || 0;
+    const urgencyLevel = data.urgency_level || data.urgencyLevel || "normal";
 
     // Validate email
     if (!email || !email.trim()) {
@@ -166,6 +168,7 @@ function doPost(e) {
       email,
       name,
       phone,
+      referralSource,
       savingsMin,
       savingsMax,
       urgencyLevel,
@@ -193,31 +196,17 @@ function doPost(e) {
   }
 }
 
-// Handle preflight requests (REQUIRED for CORS)
+// Handle preflight requests
 function doOptions(e) {
-  const output = ContentService.createTextOutput("");
-  output.setHeaders({
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  });
-  return output;
+  return ContentService.createTextOutput("");
 }
 
-// Helper function to create JSON response with CORS headers
+// Helper function to create JSON response
 function createResponse(success, message) {
-  const output = ContentService.createTextOutput(
+  return ContentService.createTextOutput(
     JSON.stringify({
       success: success,
       message: message,
     })
   ).setMimeType(ContentService.MimeType.JSON);
-
-  output.setHeaders({
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  });
-
-  return output;
 }
