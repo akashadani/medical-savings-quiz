@@ -6,6 +6,7 @@ import { QuizAnswers } from '@/lib/quizConfig';
 import { calculateSavings, SavingsEstimate } from '@/lib/savingsCalculator';
 import { getSessionId } from '@/lib/sessionManager';
 import { trackPageView, trackEmailSubmission, identifyUser } from '@/lib/mixpanel';
+import { trackFbCompleteRegistration } from '@/lib/fbPixel';
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -99,6 +100,13 @@ export default function ResultsPage() {
         savings_min: estimate?.totalMin || 0,
         savings_max: estimate?.totalMax || 0,
         urgency_level: estimate?.urgencyLevel || 'normal',
+      });
+
+      // Track Facebook Pixel CompleteRegistration event
+      trackFbCompleteRegistration({
+        content_name: 'Medical Savings Quiz',
+        value: estimate?.totalMin || 0,
+        currency: 'USD',
       });
 
       setSubmitted(true);
