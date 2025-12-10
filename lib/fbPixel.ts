@@ -42,10 +42,17 @@ export const initFacebookPixel = () => {
   window.fbq('init', '664365220412999');
   window.fbq('track', 'PageView');
 
-  // Track engaged users after 5 seconds
-  setTimeout(() => {
-    window.fbq('trackCustom', 'Engaged');
-  }, 5000);
+  // Track engaged users after 5 seconds (only once per session, only if still on site)
+  const hasTrackedEngaged = sessionStorage.getItem('fb_engaged_tracked');
+  if (!hasTrackedEngaged) {
+    setTimeout(() => {
+      // Only fire if user is still on the page (not switched tabs or closed)
+      if (document.visibilityState === 'visible') {
+        window.fbq('trackCustom', 'Engaged');
+        sessionStorage.setItem('fb_engaged_tracked', 'true');
+      }
+    }, 5000);
+  }
 };
 
 // Track page view
