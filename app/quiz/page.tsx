@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuiz } from '@/lib/quizContext';
 import { quizQuestions, infoPages } from '@/lib/quizConfig';
@@ -57,11 +57,6 @@ export default function QuizPage() {
           if (overpayInfo) {
             items.push({ type: 'info', index: infoPages.indexOf(overpayInfo) });
           }
-        } else if (question.id === 'bill_status') {
-          const optionsInfo = infoPages.find((p) => p.id === 'options_info');
-          if (optionsInfo && (!optionsInfo.conditional || optionsInfo.conditional(answers))) {
-            items.push({ type: 'info', index: infoPages.indexOf(optionsInfo) });
-          }
         } else if (question.id === 'red_flags') {
           const redFlagsInfo = infoPages.find((p) => p.id === 'red_flags_info');
           if (redFlagsInfo) {
@@ -75,7 +70,6 @@ export default function QuizPage() {
   }, [answers]);
 
   const currentItem = flowItems[currentStep];
-  const isLastStep = currentStep === flowItems.length - 1;
 
   // Count actual questions for progress bar
   const totalQuestions = flowItems.filter((item) => item.type === 'question').length;
@@ -84,6 +78,9 @@ export default function QuizPage() {
     .filter((item) => item.type === 'question').length;
 
   const handleNext = async () => {
+    // Calculate isLastStep fresh to handle dynamic flow changes
+    const isLastStep = currentStep === flowItems.length - 1;
+
     if (isLastStep) {
       // Save answers to localStorage for results page
       if (typeof window !== 'undefined') {
@@ -159,6 +156,7 @@ export default function QuizPage() {
             <QuestionCard
               question={quizQuestions[currentItem.index]}
               selectedValue={answers[quizQuestions[currentItem.index].id]}
+              allAnswers={answers}
               onSelect={(value) =>
                 handleSelect(quizQuestions[currentItem.index].id, value, quizQuestions[currentItem.index].multiSelect || false)
               }
@@ -171,7 +169,7 @@ export default function QuizPage() {
                   className="button"
                   disabled={!canProceed()}
                 >
-                  {isLastStep ? 'See Results →' : 'Continue →'}
+                  {currentStep === flowItems.length - 1 ? 'See Results →' : 'Continue →'}
                 </button>
               </div>
             )}
@@ -183,6 +181,7 @@ export default function QuizPage() {
         <div style={{ padding: '24px', paddingTop: '60px' }}>
           <InfoCard
             infoPage={infoPages[currentItem.index]}
+            allAnswers={answers}
             onContinue={handleNext}
           />
         </div>

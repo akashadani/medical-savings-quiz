@@ -1,16 +1,19 @@
 export interface QuizQuestion {
   id: string;
-  question: string;
+  question: string | ((answers: QuizAnswers) => string);
   options: QuizOption[];
   multiSelect?: boolean;
-  whyItMatters?: string;
+  whyItMatters?: string | ((answers: QuizAnswers) => string);
   conditional?: (answers: QuizAnswers) => boolean;
+  displayType?: 'default' | 'icon-grid' | 'card-grid' | 'compact';
+  encouragement?: string;
 }
 
 export interface QuizOption {
   value: string;
   label: string;
   description?: string;
+  icon?: string;
 }
 
 export interface InfoPage {
@@ -29,18 +32,22 @@ export const quizQuestions: QuizQuestion[] = [
   {
     id: 'situation',
     question: "What's your current situation?",
+    displayType: 'icon-grid',
+    encouragement: "Let's find out how much you could save!",
     options: [
-      { value: 'baby', label: 'I just had a baby' },
-      { value: 'pregnant', label: 'I am currently pregnant' },
-      { value: 'hospital', label: 'My child had a hospital stay or surgery' },
-      { value: 'er', label: "We've had multiple ER visits" },
-      { value: 'chronic', label: 'Ongoing treatment for a chronic condition' },
-      { value: 'mix', label: 'Mix of various medical expenses' },
+      { value: 'baby', label: 'I just had a baby', icon: '👶' },
+      { value: 'pregnant', label: 'I am currently pregnant', icon: '🤰' },
+      { value: 'hospital', label: 'My child had a hospital stay or surgery', icon: '🏥' },
+      { value: 'er', label: "We've had multiple ER visits", icon: '🚨' },
+      { value: 'chronic', label: 'Ongoing treatment for a chronic condition', icon: '💊' },
+      { value: 'mix', label: 'Mix of various medical expenses', icon: '📋' },
     ],
   },
   {
     id: 'expected_delivery',
     question: 'What type of delivery are you expecting?',
+    displayType: 'compact',
+    encouragement: 'This helps us estimate your potential savings',
     options: [
       { value: 'vaginal', label: 'Vaginal delivery (standard)' },
       { value: 'planned_csection', label: 'Planned C-section' },
@@ -52,6 +59,8 @@ export const quizQuestions: QuizQuestion[] = [
   {
     id: 'multiples',
     question: 'Are you expecting twins or multiples?',
+    displayType: 'compact',
+    whyItMatters: 'Multiple births significantly increase both costs and billing complexity',
     options: [
       { value: 'no', label: 'No, single baby' },
       { value: 'twins', label: 'Yes, twins' },
@@ -112,8 +121,9 @@ export const quizQuestions: QuizQuestion[] = [
   },
   {
     id: 'delivery',
-    question: 'Did your delivery involve any of these?',
+    question: 'Congratulations on your new arrival! Did the delivery involve any of these?',
     multiSelect: true,
+    encouragement: 'Select all that apply',
     options: [
       { value: 'csection', label: 'C-section' },
       { value: 'nicu', label: 'NICU stay' },
@@ -121,11 +131,14 @@ export const quizQuestions: QuizQuestion[] = [
       { value: 'complications', label: 'Complications requiring additional care' },
       { value: 'none', label: 'None, standard delivery' },
     ],
+    whyItMatters: 'Each of these typically adds $5,000-$50,000+ to your bill',
     conditional: (answers) => answers.situation === 'baby',
   },
   {
     id: 'nicu_duration',
     question: 'How long was the NICU stay?',
+    displayType: 'compact',
+    encouragement: 'NICU bills are notoriously complex - this matters',
     options: [
       { value: 'under1week', label: 'Less than 1 week' },
       { value: '1-2weeks', label: '1-2 weeks' },
@@ -133,13 +146,20 @@ export const quizQuestions: QuizQuestion[] = [
       { value: 'over1month', label: 'Over a month' },
       { value: 'ongoing', label: 'Still ongoing' },
     ],
+    whyItMatters: 'Longer stays mean more charges and more opportunities for errors',
     conditional: (answers) =>
       Array.isArray(answers.delivery) && answers.delivery.includes('nicu'),
   },
   {
     id: 'hospital_services',
-    question: 'What type of care did you or your family member receive?',
+    question: (answers) => {
+      if (answers.situation === 'baby') {
+        return 'Besides the delivery, what other care did your child receive?';
+      }
+      return 'What type of care did your child receive?';
+    },
     multiSelect: true,
+    encouragement: 'Select all that apply - each adds billing complexity',
     options: [
       { value: 'overnight', label: 'Overnight hospital stay' },
       { value: 'surgery', label: 'Surgery or procedure' },
@@ -160,7 +180,7 @@ export const quizQuestions: QuizQuestion[] = [
     question: 'Was this an emergency situation or planned care?',
     options: [
       { value: 'emergency', label: 'Emergency/urgent - no time to plan' },
-      { value: 'planned', label: 'Scheduled procedure or planned delivery' },
+      { value: 'planned', label: 'Scheduled/planned care' },
       { value: 'mix', label: 'Mix of both' },
     ],
     whyItMatters:
@@ -169,7 +189,7 @@ export const quizQuestions: QuizQuestion[] = [
   },
   {
     id: 'ambulance',
-    question: 'Did you have an ambulance ride or medical transport?',
+    question: 'Did your child need an ambulance or medical transport?',
     options: [
       { value: 'no', label: 'No' },
       { value: 'ground', label: 'Ground ambulance' },
@@ -182,7 +202,7 @@ export const quizQuestions: QuizQuestion[] = [
   },
   {
     id: 'out_of_network',
-    question: 'Were any of your providers out-of-network?',
+    question: "Were any of your child's providers out-of-network?",
     options: [
       { value: 'in_network', label: 'Everything was in-network' },
       { value: 'chose_oon', label: 'I chose to go out-of-network' },
@@ -212,6 +232,8 @@ export const quizQuestions: QuizQuestion[] = [
   {
     id: 'your_responsibility',
     question: 'How much are YOU responsible for paying (after insurance)?',
+    displayType: 'compact',
+    encouragement: "Don't worry if you're not sure - we can work with estimates",
     options: [
       { value: 'under1k', label: 'Under $1,000' },
       { value: '1k-5k', label: '$1,000 - $5,000' },
@@ -223,7 +245,14 @@ export const quizQuestions: QuizQuestion[] = [
   },
   {
     id: 'bill_status',
-    question: "What's the status of your bills?",
+    question: (answers) => {
+      const amount = answers.your_responsibility;
+      if (amount === 'over15k' || amount === '5k-15k') {
+        return "With bills this high, what's the current status?";
+      }
+      return "What's the status of your bills?";
+    },
+    displayType: 'compact',
     options: [
       { value: 'current', label: 'All current, no past due' },
       { value: 'past_due', label: 'Some are past due (30-90 days)' },
@@ -237,7 +266,13 @@ export const quizQuestions: QuizQuestion[] = [
   },
   {
     id: 'financial_hardship',
-    question: 'Are you struggling to pay these medical bills?',
+    question: (answers) => {
+      if (answers.bill_status === 'collections' || answers.bill_status === 'legal') {
+        return "We know this is stressful. How are you managing financially?";
+      }
+      return 'Are you struggling to pay these medical bills?';
+    },
+    displayType: 'compact',
     options: [
       { value: 'cant_afford', label: "Yes, I can't afford them" },
       {
@@ -349,29 +384,6 @@ export const infoPages: InfoPage[] = [
       'Most hospital visits generate bills with 10-30+ separate charges that are never reviewed',
     ],
     cta: 'Continue',
-  },
-  {
-    id: 'options_info',
-    headline: 'You Have More Options Than You Think',
-    stats: [
-      '60% of patients qualify for financial assistance but never apply',
-      'Hospitals are required to offer charity care programs - many people just don\'t know about them',
-      'You could qualify for 50-100% bill reduction based on income',
-    ],
-    cta: 'See if you qualify',
-    conditional: (answers) => {
-      // Only show if they're struggling financially AND haven't already applied for assistance
-      const isStrugglingFinancially =
-        answers.financial_hardship === 'cant_afford' ||
-        answers.financial_hardship === 'wipe_savings';
-
-      const hasntAppliedForHelp =
-        !Array.isArray(answers.actions_taken) ||
-        (!answers.actions_taken.includes('assistance') &&
-         !answers.actions_taken.includes('charity'));
-
-      return isStrugglingFinancially && hasntAppliedForHelp;
-    },
   },
   {
     id: 'red_flags_info',

@@ -330,7 +330,7 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
 
     breakdown.push({
       category: 'Financial Assistance Programs',
-      description: 'You may qualify for hospital charity care',
+      description: 'You may qualify for hospital charity care for your child\'s bills',
       min: charityMin,
       max: charityMax,
     });
@@ -343,7 +343,7 @@ export function calculateSavings(answers: QuizAnswers): SavingsEstimate {
   ) {
     breakdown.push({
       category: 'Billing Code Errors',
-      description: "You haven't reviewed itemized bills yet",
+      description: 'You haven\'t reviewed your child\'s itemized bills yet',
       min: 1000,
       max: 2500,
     });

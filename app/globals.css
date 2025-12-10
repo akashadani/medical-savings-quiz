@@ -344,6 +344,54 @@ input[type="tel"]:focus {
   animation: fadeIn 0.3s ease;
 }
 
+/* Compact layout */
+.answer-options.compact {
+  gap: 8px;
+}
+
+.answer-option.compact {
+  padding: 14px 16px;
+  font-size: 0.95rem;
+}
+
+/* Icon grid layout */
+.answer-options.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.answer-option.has-icon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.option-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.answer-option.has-icon.compact .option-icon {
+  font-size: 1.2rem;
+}
+
+/* Icon grid specific styles */
+.answer-options.icon-grid .answer-option {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 16px;
+  min-height: 110px;
+  justify-content: center;
+}
+
+.answer-options.icon-grid .option-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
 /* Mobile responsive */
 @media (max-width: 640px) {
   .page-wrapper {
@@ -360,5 +408,9 @@ input[type="tel"]:focus {
 
   .stat-highlight-value {
     font-size: 2rem;
+  }
+
+  .answer-options.icon-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
