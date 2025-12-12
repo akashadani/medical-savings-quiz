@@ -1,4 +1,4 @@
-# Medical Savings Quiz - BillRelief
+# Medical Savings Quiz - Baby Bill Relief
 
 A Next.js quiz flow application to help parents discover potential savings on their medical bills.
 
@@ -8,7 +8,7 @@ A Next.js quiz flow application to help parents discover potential savings on th
 - **Conditional Logic**: Questions and info pages appear based on relevance
 - **Savings Calculator**: Realistic estimate based on specific situation
 - **Info Pages**: Educational moments throughout the quiz
-- **Responsive Design**: Mobile-first, matches BillRelief branding
+- **Responsive Design**: Mobile-first, matches Baby Bill Relief branding
 - **Email Capture**: Collect leads with breakdown of potential savings
 
 ## Project Structure
@@ -18,7 +18,7 @@ medical-savings-quiz/
 ├── app/
 │   ├── layout.tsx          # Root layout with QuizProvider
 │   ├── page.tsx             # Landing page (Page 0)
-│   ├── globals.css          # Global styles matching BillRelief branding
+│   ├── globals.css          # Global styles matching Baby Bill Relief branding
 │   ├── quiz/
 │   │   └── page.tsx         # Main quiz flow page
 │   └── results/
@@ -118,7 +118,7 @@ Update the calculation logic in `lib/savingsCalculator.ts` to adjust savings est
 
 ### Styling Changes
 
-All styles are in `app/globals.css` and match the BillRelief branding:
+All styles are in `app/globals.css` and match the Baby Bill Relief branding:
 - Primary color: `#0891b2` (cyan)
 - Background: Light blue gradient
 - Fonts: System fonts
@@ -184,7 +184,7 @@ The calculator considers:
 
 ## License
 
-Proprietary - BillRelief
+Proprietary - Baby Bill Relief
 
 ## Support
 

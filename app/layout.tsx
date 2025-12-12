@@ -5,7 +5,7 @@ import FacebookPixelInit from '@/components/FacebookPixelInit';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Find Out How Much You\'re Leaving on the Table - BillRelief',
+  title: 'Find Out How Much You\'re Leaving on the Table - Baby Bill Relief',
   description:
     'Most parents overpay on medical bills by $2,000-$15,000. Answer a few questions to discover your potential savings.',
 };

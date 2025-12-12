@@ -152,7 +152,7 @@ export default function ResultsPage() {
     return (
       <div className="page-wrapper">
         <div style={{ padding: '60px 24px', textAlign: 'center' }}>
-          <div className="brand">BillRelief</div>
+          <div className="brand">Baby Bill Relief</div>
 
           <div
             style={{
@@ -226,7 +226,7 @@ export default function ResultsPage() {
   return (
     <div className="page-wrapper">
       <div style={{ padding: '40px 24px' }}>
-        <div className="brand">BillRelief</div>
+        <div className="brand">Baby Bill Relief</div>
 
         <h1
           style={{
@@ -431,7 +431,7 @@ export default function ResultsPage() {
             }}
           >
             Most people don't know where to start—and that's where{' '}
-            <strong style={{ color: '#0891b2' }}>BillRelief</strong> comes in.
+            <strong style={{ color: '#0891b2' }}>Baby Bill Relief</strong> comes in.
             We handle everything for you.
           </p>
 
@@ -651,7 +651,7 @@ export default function ResultsPage() {
                 <strong style={{ color: '#0f172a' }}>Jennifer L., Austin</strong>
               </div>
               <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
-                "Got hit with $12,000 in surprise out-of-network bills. BillRelief
+                "Got hit with $12,000 in surprise out-of-network bills. Baby Bill Relief
                 got it down to what I would have paid in-network - saved me $9,500!"
               </p>
               <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
@@ -668,7 +668,7 @@ export default function ResultsPage() {
                 <strong style={{ color: '#0f172a' }}>Rachel K., Denver</strong>
               </div>
               <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
-                "Multiple ER visits added up fast. BillRelief found $6,800 in duplicate
+                "Multiple ER visits added up fast. Baby Bill Relief found $6,800 in duplicate
                 charges and services billed twice. Couldn't have done it myself."
               </p>
               <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
@@ -702,7 +702,7 @@ export default function ResultsPage() {
                 </div>
                 <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '8px' }}>
                   "Hospital said I qualified for charity care but never told me.
-                  BillRelief applied for me and eliminated 70% of my bill."
+                  Baby Bill Relief applied for me and eliminated 70% of my bill."
                 </p>
                 <p style={{ color: '#0891b2', fontWeight: '600', fontSize: '0.85rem' }}>
                   💰 Total Saved: $8,400
