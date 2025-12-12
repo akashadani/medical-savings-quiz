@@ -406,6 +406,6 @@ export const infoPages: InfoPage[] = [
       'Duplicate charges alone account for 30% of billing errors',
       'Insurance denials are often wrong - 50% of appeals succeed',
     ],
-    cta: 'Continue to results',
+    cta: 'Continue',
   },
 ];
