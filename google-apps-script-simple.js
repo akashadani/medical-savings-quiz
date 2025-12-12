@@ -4,7 +4,7 @@
  */
 
 const SPREADSHEET_ID = "19g0Bf1QgAnZeFkfxXV0ELrUJjvs3zg4EvIGAmdZOTtY";
-const SHEET_NAME = "QuizSubmissions";
+const SHEET_NAME = "MedicalSavingsQuiz";
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
